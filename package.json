@@ -1,0 +1,32 @@
+{
+  "name": "bind-to-route53",
+  "version": "1.0.0",
+  "description": "Utility to move your \"*.db\" files into AWS Route 53",
+  "main": "export.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DualDev/bind-to-route53.git"
+  },
+  "keywords": [
+    "aws",
+    "route53",
+    "bind",
+    "export",
+    "import"
+  ],
+  "author": "Chase Sillevis <chase@sillevis.net> (http://chase.sillevis.net/)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DualDev/bind-to-route53/issues"
+  },
+  "homepage": "https://github.com/DualDev/bind-to-route53",
+  "dependencies": {
+    "aws-sdk": "^2.1.5",
+    "bluebird": "^2.6.4",
+    "cli": "^0.6.5",
+    "dns-zonefile": "git://github.com/DualDev/dns-zonefile.git"
+  }
+}
