@@ -101,7 +101,6 @@ var processDomain = function processDomain(path, file, fn) {
       return fn({'message': 'Required data not returned by AWS, please contact the publisher of this utility'}, false);
 
     var zoneId = data.HostedZone.Id;
-    var zoneId = '/hostedzone/Z2UZHLFFLAPXL1';
     parseBind(domain, bind.parse(zone), function(changes) {
       if(changes === false) {
         return fn({'message': 'The bind file could not be parsed: ' + domain}, false);
