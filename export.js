@@ -80,7 +80,7 @@ var processDomain = function processDomain(path, file, fn) {
       zone = fs.readFileSync(path + file, 'utf8');
 
   var params = {
-    CallerReference: 'NS_Migration_01', /* required */
+    CallerReference: 'NS_Migration_01 ' + domain, /* required */
     Name: domain, /* required */
     HostedZoneConfig: {
       Comment: 'Migrated'
@@ -235,8 +235,9 @@ var parseBind = function parseBind(domain, bind, cb) {
             var set = JSON.parse(JSON.stringify(setTempl));
             set['ResourceRecordSet']['Name'] = value.name;
             set['ResourceRecordSet']['Type'] = type.toUpperCase();
-            set['ResourceRecordSet']['TTL']  = value.ttl;
 
+            /** Default */
+            set['ResourceRecordSet']['TTL']  = value.ttl;
             value.ips.forEach(function(ip) {
               set['ResourceRecordSet']['ResourceRecords'].push({
                 'Value': ip
@@ -255,9 +256,20 @@ var parseBind = function parseBind(domain, bind, cb) {
             set['ResourceRecordSet']['TTL']  = value.ttl;
 
             value.txts.forEach(function(txt) {
-              set['ResourceRecordSet']['ResourceRecords'].push({
-                'Value':  '"' + txt + '"'
-              });
+              /** Split on 240 chars */
+              if(txt.length > 240) {
+                var pos = 0;
+                while (pos < txt.length) {
+                  set['ResourceRecordSet']['ResourceRecords'].push({
+                    'Value':  '"' + txt.slice(pos, pos += 240) + '"'
+                  });
+                }
+              }
+              else {
+                set['ResourceRecordSet']['ResourceRecords'].push({
+                  'Value':  '"' + txt + '"'
+                });
+              }
             });
 
             changes.push(set);
