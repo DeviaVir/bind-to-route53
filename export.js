@@ -7,7 +7,7 @@ var fs = require('fs'),
     Promise = require('bluebird'),
     AWS = require('aws-sdk'),
     bind = require('dns-zonefile'),
-    ddElb = 'dualstack.dd-elbphp-1i4zljew0z6nu-1880757905.eu-west-1.elb.amazonaws.com.',
+    ddElb = 'dualstack.dd-ElbPhp-1I4ZLJEW0Z6NU-1880757905.eu-west-1.elb.amazonaws.com',
     ddZone = 'Z32O12XQLNTSW2',
     region;
 
@@ -136,7 +136,6 @@ var parseBind = function parseBind(domain, bind, cb) {
     'ResourceRecordSet': {
       'Name': '',
       'Type': '',
-      'TTL': '',
       'ResourceRecords': []
     }
   };
@@ -244,67 +243,96 @@ var parseBind = function parseBind(domain, bind, cb) {
               return true;
             }
 
-            if(ip === '54.194.73.11') {
+            if(value.ips[0] === '54.194.73.11' || value.ips[0] === '95.211.77.215') {
               if(value.name.substr(0, 4) === 'ftp.') {
                 set['ResourceRecordSet']['Type'] = 'CNAME';
-                ip = value.name.substr(0, 4) + 'dualdev.com.';
+                set['ResourceRecordSet']['TTL']  = value.ttl;
+                set['ResourceRecordSet']['ResourceRecords'].push({
+                  'Value': value.name.substr(0, 4) + 'dualdev.com.'
+                });
                 replacedNames.push(value.name);
               }
               if(value.name.substr(0, 5) === 'mail.') {
                 set['ResourceRecordSet']['Type'] = 'CNAME';
-                ip = value.name.substr(0, 5) + 'dualdev.com.';
+                set['ResourceRecordSet']['TTL']  = value.ttl;
+                set['ResourceRecordSet']['ResourceRecords'].push({
+                  'Value': value.name.substr(0, 5) + 'dualdev.com.'
+                });
                 replacedNames.push(value.name);
               }
               if(value.name.substr(0, 4) === 'pma.') {
                 set['ResourceRecordSet']['Type'] = 'CNAME';
-                ip = value.name.substr(0, 4) + 'dualdev.com.';
+                set['ResourceRecordSet']['TTL']  = value.ttl;
+                set['ResourceRecordSet']['ResourceRecords'].push({
+                  'Value': value.name.substr(0, 4) + 'dualdev.com.'
+                });
                 replacedNames.push(value.name);
               }
               if(value.name.substr(0, 4) === 'pop.') {
                 set['ResourceRecordSet']['Type'] = 'CNAME';
-                ip = value.name.substr(0, 4) + 'dualdev.com.';
+                set['ResourceRecordSet']['TTL']  = value.ttl;
+                set['ResourceRecordSet']['ResourceRecords'].push({
+                  'Value': value.name.substr(0, 4) + 'dualdev.com.'
+                });
                 replacedNames.push(value.name);
               }
               if(value.name.substr(0, 5) === 'smtp.') {
                 set['ResourceRecordSet']['Type'] = 'CNAME';
-                ip = value.name.substr(0, 5) + 'dualdev.com.';
+                set['ResourceRecordSet']['TTL']  = value.ttl;
+                set['ResourceRecordSet']['ResourceRecords'].push({
+                  'Value': value.name.substr(0, 5) + 'dualdev.com.'
+                });
                 replacedNames.push(value.name);
               }
               if(value.name.substr(0, 8) === 'webmail.') {
                 set['ResourceRecordSet']['Type'] = 'CNAME';
-                ip = value.name.substr(0, 8) + 'dualdev.com.';
+                set['ResourceRecordSet']['TTL']  = value.ttl;
+                set['ResourceRecordSet']['ResourceRecords'].push({
+                  'Value': value.name.substr(0, 8) + 'dualdev.com.'
+                });
                 replacedNames.push(value.name);
               }
-            }
 
-            var loadbalancers = [
-              '95.211.76.100',
-              '108.61.103.133',
-              '2001:1af8:4500:a005:5::adba:01',
-              '2001:1af8:4500:a005:5::adba:02',
-              '2001:1af8:4500:a005:5::adba:03',
-              '162.243.84.195',
-              '95.85.62.101'
-            ];
-            if(loadbalancers.indexOf(ip) > -1) {
-              /** DualDev ELB */
-              set['ResourceRecordSet']['AliasTarget'] = {
-                'HostedZoneId': ddZone,
-                'DNSName': ddElb,
-                'EvaluateTargetHealth': false
-              };
+              changes.push(set);
             }
             else {
-              /** Default */
-              set['ResourceRecordSet']['TTL']  = value.ttl;
-              value.ips.forEach(function(ip) {
-                set['ResourceRecordSet']['ResourceRecords'].push({
-                  'Value': ip
+              var loadbalancers = [
+                '95.211.76.100',
+                '108.61.103.133',
+                '2001:1af8:4500:a005:5::adba:01',
+                '2001:1af8:4500:a005:5::adba:02',
+                '2001:1af8:4500:a005:5::adba:03',
+                '162.243.84.195',
+                '95.85.62.101'
+              ];
+
+              return Promise.resolve(loadbalancers).each(function(lb) {
+                if(value.ips.indexOf(lb) > -1) {
+                  // using old loadbalancers, replace
+                  return Promise.reject();
+                }
+              }).then(function() {
+                /** Default */
+                set['ResourceRecordSet']['TTL']  = value.ttl;
+                value.ips.forEach(function(ip) {
+                  set['ResourceRecordSet']['ResourceRecords'].push({
+                    'Value': ip
+                  });
                 });
+
+                changes.push(set);
+              }).catch(function() {
+                /** DualDev ELB */
+                delete set['ResourceRecordSet']['ResourceRecords'];
+                set['ResourceRecordSet']['AliasTarget'] = {
+                  'HostedZoneId': ddZone,
+                  'DNSName': ddElb,
+                  'EvaluateTargetHealth': false
+                };
+
+                changes.push(set);
               });
             }
-
-            changes.push(set);
           });
         case 'txt':
           return Promise.resolve(Object.keys(records[(type)])).each(function(value) {
