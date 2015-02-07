@@ -147,7 +147,8 @@ var parseBind = function parseBind(domain, bind, cb) {
     'txt': {},
     'mx': {}
   }, obj;
-  Promise.resolve(Object.keys(bind)).each(function(type) {
+  
+  return Promise.resolve(Object.keys(bind)).each(function(type) {
     switch(type) {
       case 'a':
       case 'aaaa':
@@ -221,68 +222,65 @@ var parseBind = function parseBind(domain, bind, cb) {
         });
       break;
     }
-  });
+  }).then(function() {
+    return Promise.resolve(Object.keys(records)).each(function(type) {
+      switch(type) {
+        case 'a':
+        case 'aaaa':
+        case 'srv':
+        case 'ptr':
+          return Promise.resolve(Object.keys(records[(type)])).each(function(value) {
+            value = records[(type)][(value)];
 
-  Promise.resolve(Object.keys(records)).each(function(type) {
-    switch(type) {
-      case 'a':
-      case 'aaaa':
-      case 'srv':
-      case 'ptr':
-        Promise.resolve(Object.keys(records[(type)])).each(function(value) {
-          value = records[(type)][(value)];
+            var set = JSON.parse(JSON.stringify(setTempl));
+            set['ResourceRecordSet']['Name'] = value.name;
+            set['ResourceRecordSet']['Type'] = type.toUpperCase();
+            set['ResourceRecordSet']['TTL']  = value.ttl;
 
-          var set = JSON.parse(JSON.stringify(setTempl));
-          set['ResourceRecordSet']['Name'] = value.name;
-          set['ResourceRecordSet']['Type'] = type.toUpperCase();
-          set['ResourceRecordSet']['TTL']  = value.ttl;
-
-          value.ips.forEach(function(ip) {
-            set['ResourceRecordSet']['ResourceRecords'].push({
-              'Value': ip
+            value.ips.forEach(function(ip) {
+              set['ResourceRecordSet']['ResourceRecords'].push({
+                'Value': ip
+              });
             });
+
+            changes.push(set);
           });
+        case 'txt':
+          return Promise.resolve(Object.keys(records[(type)])).each(function(value) {
+            value = records[(type)][(value)];
 
-          changes.push(set);
-        });
-      break;
-      case 'txt':
-        Promise.resolve(Object.keys(records[(type)])).each(function(value) {
-          value = records[(type)][(value)];
+            var set = JSON.parse(JSON.stringify(setTempl));
+            set['ResourceRecordSet']['Name'] = value.name;
+            set['ResourceRecordSet']['Type'] = type.toUpperCase();
+            set['ResourceRecordSet']['TTL']  = value.ttl;
 
-          var set = JSON.parse(JSON.stringify(setTempl));
-          set['ResourceRecordSet']['Name'] = value.name;
-          set['ResourceRecordSet']['Type'] = type.toUpperCase();
-          set['ResourceRecordSet']['TTL']  = value.ttl;
-
-          value.txts.forEach(function(txt) {
-            set['ResourceRecordSet']['ResourceRecords'].push({
-              'Value':  '"' + txt + '"'
+            value.txts.forEach(function(txt) {
+              set['ResourceRecordSet']['ResourceRecords'].push({
+                'Value':  '"' + txt + '"'
+              });
             });
+
+            changes.push(set);
           });
+        case 'mx':
+          return Promise.resolve(Object.keys(records[(type)])).each(function(value) {
+            value = records[(type)][(value)];
 
-          changes.push(set);
-        });
-      break;
-      case 'mx':
-        Promise.resolve(Object.keys(records[(type)])).each(function(value) {
-          value = records[(type)][(value)];
+            var set = JSON.parse(JSON.stringify(setTempl));
+            set['ResourceRecordSet']['Name'] = value.name;
+            set['ResourceRecordSet']['Type'] = type.toUpperCase();
+            set['ResourceRecordSet']['TTL']  = value.ttl;
 
-          var set = JSON.parse(JSON.stringify(setTempl));
-          set['ResourceRecordSet']['Name'] = value.name;
-          set['ResourceRecordSet']['Type'] = type.toUpperCase();
-          set['ResourceRecordSet']['TTL']  = value.ttl;
-
-          value.mxs.forEach(function(mx) {
-            set['ResourceRecordSet']['ResourceRecords'].push({
-              'Value': mx
+            value.mxs.forEach(function(mx) {
+              set['ResourceRecordSet']['ResourceRecords'].push({
+                'Value': mx
+              });
             });
-          });
 
-          changes.push(set);
-        });
-      break;
-    }
+            changes.push(set);
+          });
+      }
+    });
   }).finally(function() {
     return cb(changes);
   });
