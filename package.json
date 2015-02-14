@@ -1,6 +1,6 @@
 {
   "name": "bind-to-route53",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Utility to move your \"*.db\" files into AWS Route 53",
   "main": "export.js",
   "scripts": {
