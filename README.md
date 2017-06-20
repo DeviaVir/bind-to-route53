@@ -1,4 +1,6 @@
 # bind-to-route53
+
+[![Greenkeeper badge](https://badges.greenkeeper.io/DeviaVir/bind-to-route53.svg)](https://greenkeeper.io/)
 BIND DNS to Route53
 
 This utility has been used to move all DualDev DNS domains to AWS Route53 in a matter of a few minutes. For any specific rules used for DualDev, please see the `dualdev` branch.
